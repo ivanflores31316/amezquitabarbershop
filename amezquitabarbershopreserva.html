@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amezquita Barbershop | Premium Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+        
+        :root {
+            --gold-primary: #d4af37;
+            --gold-light: #f9e392;
+            --gold-dark: #aa8a2e;
+            --black-deep: #0a0a0a;
+            --black-soft: #1a1a1a;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--black-deep);
+            color: #e5e5e5;
+            background-image: radial-gradient(circle at 50% -20%, #2a2a2a 0%, #0a0a0a 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-luxury { font-family: 'Playfair Display', serif; }
+        
+        .gold-text {
+            background: linear-gradient(to right, var(--gold-light), var(--gold-primary), var(--gold-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            background: rgba(26, 26, 26, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 99px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .status-pending { background: rgba(212, 175, 55, 0.1); color: var(--gold-primary); border: 1px solid rgba(212, 175, 55, 0.3); }
+        .status-accepted { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .status-rejected { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .status-inservice { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+
+        .btn-gold {
+            background: linear-gradient(45deg, var(--gold-dark), var(--gold-primary));
+            transition: all 0.3s ease;
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.5s ease forwards; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--black-deep); }
+        ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Cabecera -->
+        <header class="flex justify-between items-center mb-12 animate-fade-in">
+            <div>
+                <h1 class="font-luxury text-4xl italic gold-text tracking-tighter">Amezquita</h1>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">Barbershop</p>
+            </div>
+            <button onclick="checkAdminAccess()" class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-gold-primary hover:border-gold-primary transition-all">
+                <i class="fas fa-crown text-sm"></i>
+            </button>
+        </header>
+
+        <!-- Contenido Principal -->
+        <div id="tab-booking" class="tab-content grid lg:grid-cols-3 gap-8">
+            <!-- Izquierda: Estado en tiempo real -->
+            <div class="space-y-6">
+                <div class="glass-card p-6 rounded-3xl animate-fade-in" style="animation-delay: 0.1s">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-gold-primary mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-gold-primary animate-pulse"></span>
+                        Estado de la Barbería
+                    </h2>
+                    <div id="real-time-status" class="space-y-4"></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-3xl animate-fade-in" style="animation-delay: 0.2s">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Horario</h2>
+                    <div id="schedule-display" class="space-y-2 text-xs"></div>
+                </div>
+            </div>
+
+            <!-- Centro: Formulario -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="glass-card p-8 rounded-[2.5rem] relative overflow-hidden animate-fade-in" style="animation-delay: 0.3s">
+                    <div id="appointment-form-container">
+                        <form id="appointment-form" class="space-y-6">
+                            <h2 class="font-luxury text-3xl text-white mb-8">Reservar Experiencia</h2>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-gray-500 ml-2">Nombre del Cliente</label>
+                                    <input type="text" id="cust-name" required placeholder="Ej. Juan Pérez" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-gold-primary">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-gray-500 ml-2">Barbero</label>
+                                    <select id="barber-select" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none"></select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-gray-500 ml-2">Servicio</label>
+                                    <select id="service-select" onchange="updateDepositPreview()" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none"></select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-gray-500 ml-2">Fecha</label>
+                                        <input type="date" id="date" required onchange="validateDay(this)" class="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm text-white focus:outline-none">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-gray-500 ml-2">Hora</label>
+                                        <select id="time-select" class="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm text-white focus:outline-none"></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col md:flex-row items-center justify-between p-6 bg-gold-primary/5 rounded-3xl border border-gold-primary/20 gap-4 mt-8">
+                                <div>
+                                    <p class="text-[10px] uppercase font-black text-gold-primary">Depósito (30%)</p>
+                                    <p id="deposit-amount" class="text-2xl font-luxury text-white">$0.00</p>
+                                </div>
+                                <button type="submit" class="btn-gold w-full md:w-auto px-10 py-4 rounded-2xl text-black font-bold uppercase text-xs">Confirmar Reserva</button>
+                            </div>
+                        </form>
+
+                        <!-- Pago -->
+                        <div id="payment-details" class="hidden animate-fade-in space-y-6">
+                            <div class="text-center">
+                                <h3 class="font-luxury text-2xl text-white">Datos de Pago</h3>
+                                <p class="text-xs text-gray-400 mt-2">Realiza tu depósito para confirmar</p>
+                            </div>
+                            <div class="space-y-3" id="bank-info-box"></div>
+                            <button onclick="resetBooking()" class="w-full py-4 rounded-2xl bg-white/5 text-white text-[10px] font-bold uppercase">Volver</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Administración -->
+        <div id="tab-admin" class="tab-content hidden animate-fade-in">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="font-luxury text-3xl text-white">Panel Admin</h2>
+                <button onclick="switchTab('booking')" class="text-xs text-gold-primary hover:text-gold-light transition-colors font-black uppercase flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Regresar a Reservas
+                </button>
+            </div>
+            <div class="grid lg:grid-cols-4 gap-6">
+                <div class="space-y-6">
+                    <div class="glass-card p-6 rounded-3xl">
+                        <h3 class="text-[10px] uppercase font-black text-gray-400 mb-6">Gestionar Barberos</h3>
+                        <div id="admin-barbers-list" class="space-y-3 mb-6"></div>
+                        <div class="space-y-2">
+                            <input type="text" id="new-barber-name" placeholder="Nombre" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none">
+                            <input type="text" id="new-barber-role" placeholder="Puesto (Ej: Senior)" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none">
+                            <button onclick="addNewBarber()" class="w-full py-2 rounded-xl bg-gold-primary text-black text-[10px] font-bold uppercase">Añadir Barbero</button>
+                        </div>
+                    </div>
+                    <div id="admin-manual-barbers" class="glass-card p-6 rounded-3xl space-y-4"></div>
+                </div>
+                <div class="lg:col-span-3">
+                    <div class="glass-card rounded-[2.5rem] overflow-hidden">
+                        <div class="p-6 border-b border-white/5 font-black text-[10px] text-white">LISTA DE CITAS</div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-white/5 text-[10px] uppercase text-gray-500 font-black">
+                                    <tr>
+                                        <th class="px-6 py-4">Cliente</th>
+                                        <th class="px-6 py-4">Depósito</th>
+                                        <th class="px-6 py-4">Horario</th>
+                                        <th class="px-6 py-4">Estado</th>
+                                        <th class="px-6 py-4 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointments-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Contraseña -->
+    <div id="password-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 hidden p-4">
+        <div class="glass-card p-8 rounded-[2rem] w-full max-sm:max-w-xs max-w-sm">
+            <input type="password" id="admin-pass" placeholder="Contraseña" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-center text-white outline-none mb-4">
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="closeModal()" class="py-4 rounded-2xl bg-white/5 text-white text-[10px] font-bold uppercase">Cancelar</button>
+                <button onclick="verifyPassword()" class="py-4 rounded-2xl bg-gold-primary text-black text-[10px] font-bold uppercase">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 glass-card px-8 py-4 rounded-full transition-all duration-500 opacity-0 translate-y-10 z-[100] pointer-events-none">
+        <p id="toast-msg" class="text-xs font-bold uppercase"></p>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN ---
+        const SUPABASE_URL = "https://rbijodsnlneqrceomqzm.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_wpOSfLIOpEdO0ha9l6v7ng_ojIfBz3g"; 
+        let _supabase = null;
+        const ADMIN_PASS = "admin123";
+        
+        const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+        let config = {
+            openDays: [1, 2, 3, 4, 5, 6],
+            barbers: [],
+            services: [
+                { name: "Corte Signature", price: 300 },
+                { name: "Corte + Barba Royal", price: 450 },
+                { name: "Barba & Toalla Caliente", price: 200 }
+            ],
+            bankData: { bank: "Amezquita Bank", account: "0000 1111 2222", holder: "Amezquita Barbershop" }
+        };
+        let appointments = [];
+
+        window.onload = async () => {
+            if (SUPABASE_URL && SUPABASE_KEY) {
+                _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                await refreshData();
+            } else {
+                showToast("Configura Supabase para habilitar guardado", false);
+            }
+            renderSchedule();
+            renderTimeSlots();
+            setInterval(updateRealTimeStatuses, 1000);
+            updateUI();
+        };
+
+        async function refreshData() {
+            if (!_supabase) return;
+            try {
+                const { data: b, error: bError } = await _supabase.from('barbers').select('*').order('id');
+                if (!bError) config.barbers = b || [];
+                
+                const { data: a, error: aError } = await _supabase.from('appointments').select('*').order('id', { ascending: false });
+                if (!aError) appointments = a || [];
+
+                updateUI();
+            } catch (e) { 
+                console.error("Error al refrescar datos:", e); 
+            }
+        }
+
+        function updateUI() {
+            renderBarberOptions();
+            renderServiceOptions();
+            renderAdminBarbers();
+            renderAdminAppointments();
+            renderAdminManual();
+        }
+
+        async function addNewBarber() {
+            if (!_supabase) return showToast("Supabase no configurado", false);
+            const name = document.getElementById('new-barber-name').value;
+            const role = document.getElementById('new-barber-role').value;
+            
+            if (!name || !role) return showToast("Faltan datos", false);
+
+            const { error } = await _supabase.from('barbers').insert([{ 
+                name: name, 
+                role: role, 
+                busy_until: 0 
+            }]);
+
+            if (error) {
+                console.error(error);
+                showToast("Error al añadir barbero", false);
+            } else {
+                showToast("Barbero añadido");
+                document.getElementById('new-barber-name').value = "";
+                document.getElementById('new-barber-role').value = "";
+                await refreshData();
+            }
+        }
+
+        async function removeBarber(id) {
+            if (!_supabase) return;
+            const { error } = await _supabase.from('barbers').delete().eq('id', id);
+            if (!error) {
+                showToast("Barbero eliminado");
+                await refreshData();
+            }
+        }
+
+        function renderAdminBarbers() {
+            const list = document.getElementById('admin-barbers-list');
+            list.innerHTML = config.barbers.map(b => `
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
+                    <div class="text-[10px]">
+                        <p class="text-white font-bold">${b.name}</p>
+                        <p class="text-gray-500 uppercase">${b.role}</p>
+                    </div>
+                    <button onclick="removeBarber(${b.id})" class="text-red-500/50 hover:text-red-500 transition-colors"><i class="fas fa-trash"></i></button>
+                </div>
+            `).join('') || '<p class="text-[10px] text-gray-600 text-center">No hay barberos registrados</p>';
+        }
+
+        function renderBarberOptions() {
+            const s = document.getElementById('barber-select');
+            s.innerHTML = config.barbers.map(b => `<option value="${b.id}">${b.name} (${b.role})</option>`).join('') || '<option disabled>Sin barberos disponibles</option>';
+        }
+
+        function renderServiceOptions() {
+            const s = document.getElementById('service-select');
+            s.innerHTML = config.services.map(ser => `<option value="${ser.name}" data-price="${ser.price}">${ser.name} ($${ser.price})</option>`).join('');
+            updateDepositPreview();
+        }
+
+        function updateDepositPreview() {
+            const s = document.getElementById('service-select');
+            if(!s.selectedOptions[0]) return;
+            const price = parseFloat(s.selectedOptions[0].dataset.price);
+            document.getElementById('deposit-amount').innerText = `$${(price * 0.3).toFixed(2)}`;
+        }
+
+        document.getElementById('appointment-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!_supabase) return showToast("Error de conexión", false);
+
+            const barberId = document.getElementById('barber-select').value;
+            const serviceSelect = document.getElementById('service-select');
+            if (!barberId) return showToast("Selecciona un barbero", false);
+            
+            const serviceName = serviceSelect.value;
+            const price = parseFloat(serviceSelect.selectedOptions[0].dataset.price);
+
+            const { error } = await _supabase.from('appointments').insert([{
+                customer_name: document.getElementById('cust-name').value,
+                barber_id: parseInt(barberId),
+                appointment_date: document.getElementById('date').value,
+                appointment_time: document.getElementById('time-select').value,
+                deposit_amount: (price * 0.3),
+                status: 'pending'
+            }]);
+
+            if(!error) {
+                showToast("Cita registrada correctamente");
+                showPaymentDetails(price * 0.3);
+                await refreshData();
+            } else {
+                console.error(error);
+                showToast("Error al procesar reserva", false);
+            }
+        };
+
+        function showPaymentDetails(deposit) {
+            document.getElementById('appointment-form').classList.add('hidden');
+            const details = document.getElementById('payment-details');
+            details.classList.remove('hidden');
+            document.getElementById('bank-info-box').innerHTML = `
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/10 text-xs">
+                    <span class="text-gray-500 uppercase font-bold">Banco</span><span class="text-white">${config.bankData.bank}</span>
+                </div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/10 text-xs">
+                    <span class="text-gray-500 uppercase font-bold">Cuenta</span><span class="text-gold-primary font-bold">${config.bankData.account}</span>
+                </div>
+                <div class="flex justify-between p-4 bg-gold-primary/20 rounded-2xl border border-gold-primary/30 text-xs font-bold">
+                    <span class="text-gold-primary uppercase">Total a Depositar</span><span class="text-white">$${deposit.toFixed(2)}</span>
+                </div>
+            `;
+        }
+
+        async function updateStatus(id, newStatus) {
+            if (!_supabase) return;
+            const { error } = await _supabase.from('appointments').update({ status: newStatus }).eq('id', id);
+            if (!error) await refreshData();
+        }
+
+        async function startService(barberId, appId) {
+            if (!_supabase) return;
+            const until = Math.floor(Date.now() / 1000) + (30 * 60);
+            await _supabase.from('barbers').update({ busy_until: until }).eq('id', barberId);
+            await _supabase.from('appointments').update({ status: 'inservice' }).eq('id', appId);
+            await refreshData();
+        }
+
+        function updateRealTimeStatuses() {
+            const container = document.getElementById('real-time-status');
+            const now = Math.floor(Date.now() / 1000);
+            let html = "";
+            config.barbers.forEach(b => {
+                const diff = b.busy_until - now;
+                if (diff > 0) {
+                    const m = Math.floor(diff / 60);
+                    const s = diff % 60;
+                    html += `<div class="glass-card p-4 rounded-2xl flex justify-between items-center border-gold-primary animate-pulse">
+                        <div class="text-[10px]"><p class="text-gold-primary font-black uppercase">En Servicio</p><p class="text-white">${b.name}</p></div>
+                        <div class="font-mono text-gold-primary text-sm font-bold">${m}:${s < 10 ? '0'+s : s}</div>
+                    </div>`;
+                }
+            });
+            container.innerHTML = html || '<p class="text-[10px] text-gray-600 text-center py-4 italic">No hay servicios activos ahora</p>';
+        }
+
+        function renderAdminAppointments() {
+            const list = document.getElementById('appointments-list');
+            list.innerHTML = appointments.map(a => {
+                const b = config.barbers.find(x => x.id === a.barber_id);
+                return `
+                <tr class="hover:bg-white/5 text-[10px] border-b border-white/5 transition-colors">
+                    <td class="px-6 py-4"><p class="font-bold text-white">${a.customer_name}</p><p class="text-gray-500 uppercase">${b ? b.name : 'No asignado'}</p></td>
+                    <td class="px-6 py-4 gold-text font-bold">$${a.deposit_amount.toFixed(2)}</td>
+                    <td class="px-6 py-4"><span>${a.appointment_date}</span><br><span class="text-gold-primary font-bold">${a.appointment_time}</span></td>
+                    <td class="px-6 py-4 text-center"><span class="status-badge status-${a.status}">${a.status}</span></td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        ${a.status === 'accepted' ? `<button onclick="startService(${a.barber_id}, ${a.id})" class="bg-gold-primary text-black px-2 py-1 rounded font-bold uppercase text-[8px] hover:scale-105 transition-transform">Iniciar</button>` : ''}
+                        <button onclick="updateStatus(${a.id}, 'accepted')" class="text-emerald-500 hover:text-emerald-400"><i class="fas fa-check"></i></button>
+                        <button onclick="updateStatus(${a.id}, 'rejected')" class="text-red-500 hover:text-red-400"><i class="fas fa-times"></i></button>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="5" class="p-8 text-center text-gray-600 text-xs">No hay citas registradas</td></tr>';
+        }
+
+        function renderAdminManual() {
+            const container = document.getElementById('admin-manual-barbers');
+            container.innerHTML = `<h3 class="text-[10px] uppercase font-black text-gold-primary mb-2">Cronómetros Manuales</h3>` + 
+            config.barbers.map(b => `<div class="flex justify-between items-center bg-white/5 p-2 rounded-lg border border-white/5 text-[10px] mb-2">
+                <span class="text-white">${b.name}</span>
+                <button onclick="manualTimer(${b.id})" class="bg-gold-primary text-black px-2 py-1 rounded font-bold uppercase text-[8px]">Set 30m</button>
+            </div>`).join('');
+        }
+
+        async function manualTimer(id) {
+            if (!_supabase) return;
+            const until = Math.floor(Date.now() / 1000) + (30 * 60);
+            await _supabase.from('barbers').update({ busy_until: until }).eq('id', id);
+            await refreshData();
+        }
+
+        function renderSchedule() {
+            const d = document.getElementById('schedule-display');
+            d.innerHTML = dayNames.map((n, i) => `
+                <div class="flex justify-between items-center ${config.openDays.includes(i) ? 'text-gray-300' : 'text-gray-700'}">
+                    <span>${n}</span>
+                    <span>${config.openDays.includes(i) ? '09:00 - 20:00' : 'Cerrado'}</span>
+                </div>`).join('');
+        }
+
+        function renderTimeSlots() {
+            const s = document.getElementById('time-select');
+            let o = "";
+            for(let i=9; i<20; i++){ 
+                let hour = i < 10 ? '0'+i : i;
+                o+=`<option value="${hour}:00">${hour}:00</option><option value="${hour}:30">${hour}:30</option>`; 
+            }
+            s.innerHTML = o;
+        }
+
+        function validateDay(i) {
+            const d = new Date(i.value + 'T00:00:00').getDay();
+            if(!config.openDays.includes(d)){ 
+                showToast("La barbería está cerrada este día", false); 
+                i.value = ""; 
+            }
+        }
+
+        function resetBooking() { 
+            document.getElementById('appointment-form').reset(); 
+            document.getElementById('appointment-form').classList.remove('hidden'); 
+            document.getElementById('payment-details').classList.add('hidden'); 
+            updateDepositPreview(); 
+        }
+
+        function switchTab(t) { 
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); 
+            const target = document.getElementById(`tab-${t}`);
+            if(target) target.classList.remove('hidden'); 
+        }
+
+        function checkAdminAccess() { 
+            document.getElementById('password-modal').classList.remove('hidden'); 
+            document.getElementById('admin-pass').focus(); 
+        }
+
+        function closeModal() { 
+            document.getElementById('password-modal').classList.add('hidden'); 
+        }
+
+        function verifyPassword() { 
+            if(document.getElementById('admin-pass').value === ADMIN_PASS){ 
+                closeModal(); 
+                switchTab('booking'); 
+                switchTab('admin'); 
+            } else { 
+                showToast("Contraseña incorrecta", false); 
+            } 
+            document.getElementById('admin-pass').value=""; 
+        }
+
+        function showToast(m, s=true) { 
+            const t = document.getElementById('toast'); 
+            document.getElementById('toast-msg').innerText = m; 
+            document.getElementById('toast-msg').style.color = s ? "var(--gold-primary)" : "#ef4444"; 
+            t.classList.remove('opacity-0', 'translate-y-10'); 
+            setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 2500); 
+        }
+    </script>
+</body>
+</html>
