@@ -233,6 +233,7 @@
             <button class="nav-tab active" id="adm-nav-citas"     onclick="switchAdminTab('citas')">Citas</button>
             <button class="nav-tab"        id="adm-nav-fila"      onclick="switchAdminTab('fila')">Fila de Espera</button>
             <button class="nav-tab"        id="adm-nav-horarios"  onclick="switchAdminTab('horarios')">Horarios</button>
+            <button class="nav-tab"        id="adm-nav-servicios" onclick="switchAdminTab('servicios')">Servicios</button>
             <button class="nav-tab"        id="adm-nav-barberos"  onclick="switchAdminTab('barberos')">Barberos</button>
             <button class="nav-tab"        id="adm-nav-portfolio" onclick="switchAdminTab('portfolio')">Portafolio</button>
         </div>
@@ -302,7 +303,26 @@
         </div>
 
         <!-- BARBEROS -->
-        <div id="adm-tab-barberos" class="adm-tab" style="display:none;">
+        
+        <!-- ADMIN: SERVICIOS -->
+        <div id="adm-tab-servicios" class="adm-tab" style="display:none;">
+          <div style="display:grid;gap:24px;grid-template-columns:1fr;max-width:640px;">
+            <div class="card" style="border-radius:8px;padding:32px;">
+              <p class="lbl" style="margin-bottom:20px;">Lista de Servicios</p>
+              <div id="services-list" style="margin-bottom:28px;"></div>
+              <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:24px;">
+                <p class="lbl" style="margin-bottom:14px;">Agregar Nuevo Servicio</p>
+                <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;margin-bottom:10px;">
+                  <input type="text" id="new-svc-name" placeholder="Nombre del servicio" class="inp">
+                  <input type="number" id="new-svc-price" placeholder="Precio" min="0" class="inp">
+                </div>
+                <button onclick="addService()" class="btn-primary" style="width:100%;"><i class="fas fa-plus"></i> Agregar Servicio</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+<div id="adm-tab-barberos" class="adm-tab" style="display:none;">
             <div id="adm-barbers-cols" style="display:grid;gap:24px;grid-template-columns:1fr;">
                 <div class="card" style="border-radius:8px;padding:28px;">
                     <p class="lbl" style="margin-bottom:20px;">Gestionar Barberos</p>
@@ -407,9 +427,9 @@ function renderAll(){
 
 // LOCAL STORAGE
 function loadLocalConfig(){
-    try{const s=localStorage.getItem('amezquita_v2');if(s){const p=JSON.parse(s);if(p.schedule)config.schedule=p.schedule;if(p.blockedSlots)config.blockedSlots=p.blockedSlots;if(typeof p.queueCount==='number')config.queueCount=p.queueCount;}}catch(e){}
+    try{const s=localStorage.getItem('amezquita_v2');if(s){const p=JSON.parse(s);if(p.schedule)config.schedule=p.schedule;if(p.blockedSlots)config.blockedSlots=p.blockedSlots;if(typeof p.queueCount==='number')config.queueCount=p.queueCount;if(p.services&&p.services.length)config.services=p.services;}}catch(e){}
 }
-function saveLocalConfig(){try{localStorage.setItem('amezquita_v2',JSON.stringify({schedule:config.schedule,blockedSlots:config.blockedSlots,queueCount:config.queueCount}));}catch(e){}}
+function saveLocalConfig(){try{localStorage.setItem('amezquita_v2',JSON.stringify({schedule:config.schedule,blockedSlots:config.blockedSlots,queueCount:config.queueCount,services:config.services}));}catch(e){}}
 
 // BROADCAST for same-device multi-tab queue sync
 function setupQueueBroadcast(){
@@ -644,9 +664,77 @@ function renderAdminManual(){
 }
 async function manualTimer(id){if(!_supabase)return;await _supabase.from('barbers').update({busy_until:Math.floor(Date.now()/1000)+1800}).eq('id',id);await refreshData();}
 
+
+// SERVICES EDITOR
+function renderServicesList(){
+    const c=document.getElementById('services-list');if(!c)return;
+    if(!config.services.length){c.innerHTML='<p style="font-size:11px;color:var(--ash);text-align:center;padding:20px 0;">Sin servicios</p>';return;}
+    c.innerHTML=config.services.map((sv,i)=>{
+        return `<div id="svc-row-${i}" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:4px;margin-bottom:8px;transition:border-color .2s;">
+            <div style="flex:1;min-width:0;" id="svc-view-${i}">
+                <p style="font-size:13px;font-weight:700;color:var(--cream);">${sv.name}</p>
+                <p style="font-size:10px;color:var(--gold);font-weight:700;margin-top:3px;">$${parseFloat(sv.price).toFixed(2)} &nbsp;·&nbsp; Depósito $${(sv.price*.3).toFixed(2)}</p>
+            </div>
+            <div id="svc-edit-${i}" style="display:none;flex:1;gap:8px;align-items:center;">
+                <input type="text" id="edit-name-${i}" value="${sv.name}" class="inp" style="flex:1;padding:9px 12px;font-size:12px;">
+                <input type="number" id="edit-price-${i}" value="${sv.price}" class="inp" style="width:110px;padding:9px 12px;font-size:12px;" min="0">
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;" id="svc-btns-view-${i}">
+                <button onclick="startEditService(${i})" style="background:none;border:1px solid rgba(201,168,76,.2);border-radius:3px;padding:7px 13px;cursor:pointer;color:var(--gold);font-size:11px;font-family:'Raleway',sans-serif;transition:all .2s;" onmouseover="this.style.background='rgba(201,168,76,.08)'" onmouseout="this.style.background='none'"><i class="fas fa-pencil-alt"></i></button>
+                <button onclick="deleteService(${i})" style="background:none;border:1px solid rgba(239,68,68,.2);border-radius:3px;padding:7px 13px;cursor:pointer;color:#ef4444;font-size:11px;transition:all .2s;" onmouseover="this.style.background='rgba(239,68,68,.08)'" onmouseout="this.style.background='none'"><i class="fas fa-trash-alt"></i></button>
+            </div>
+            <div style="display:none;gap:6px;flex-shrink:0;" id="svc-btns-edit-${i}">
+                <button onclick="saveEditService(${i})" class="btn-primary" style="padding:8px 16px;font-size:9px;"><i class="fas fa-check"></i> Guardar</button>
+                <button onclick="cancelEditService(${i})" class="btn-ghost" style="padding:8px 14px;font-size:9px;">Cancelar</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+function startEditService(i){
+    document.getElementById('svc-view-'+i).style.display='none';
+    const ed=document.getElementById('svc-edit-'+i);ed.style.display='flex';
+    document.getElementById('svc-btns-view-'+i).style.display='none';
+    document.getElementById('svc-btns-edit-'+i).style.display='flex';
+    document.getElementById('svc-row-'+i).style.borderColor='rgba(201,168,76,.3)';
+}
+function cancelEditService(i){
+    document.getElementById('svc-view-'+i).style.display='block';
+    document.getElementById('svc-edit-'+i).style.display='none';
+    document.getElementById('svc-btns-view-'+i).style.display='flex';
+    document.getElementById('svc-btns-edit-'+i).style.display='none';
+    document.getElementById('svc-row-'+i).style.borderColor='rgba(255,255,255,.06)';
+}
+async function saveEditService(i){
+    const name=document.getElementById('edit-name-'+i).value.trim();
+    const price=parseFloat(document.getElementById('edit-price-'+i).value);
+    if(!name||isNaN(price)||price<0)return showToast('Datos invalidos',false);
+    config.services[i]={name,price};
+    saveLocalConfig();
+    renderServicesList();renderServiceOptions();
+    showToast('Servicio actualizado');
+}
+async function deleteService(i){
+    if(!confirm('Eliminar este servicio?'))return;
+    config.services.splice(i,1);
+    saveLocalConfig();
+    renderServicesList();renderServiceOptions();
+    showToast('Servicio eliminado');
+}
+async function addService(){
+    const name=document.getElementById('new-svc-name').value.trim();
+    const price=parseFloat(document.getElementById('new-svc-price').value);
+    if(!name||isNaN(price)||price<0)return showToast('Completa nombre y precio',false);
+    config.services.push({name,price});
+    saveLocalConfig();
+    document.getElementById('new-svc-name').value='';
+    document.getElementById('new-svc-price').value='';
+    renderServicesList();renderServiceOptions();
+    showToast('Servicio agregado');
+}
+
 // NAVIGATION
 function switchPublicTab(t){['booking','portfolio'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';const b=document.getElementById('pub-nav-'+id);if(b)b.classList.toggle('active',id===t);});if(t==='portfolio'){renderPortfolioFilters();renderPublicPortfolio();}}
-function switchAdminTab(t){document.querySelectorAll('.adm-tab').forEach(el=>el.style.display='none');document.getElementById('adm-tab-'+t).style.display='block';['citas','fila','horarios','barberos','portfolio'].forEach(id=>{const b=document.getElementById('adm-nav-'+id);if(b)b.classList.toggle('active',id===t);});if(t==='portfolio')renderAdminPortfolio();if(t==='fila'){renderQueueAdminDisplay();renderQueuePreview();}if(t==='horarios'){renderScheduleEditor();renderBlockedSlots();}}
+function switchAdminTab(t){document.querySelectorAll('.adm-tab').forEach(el=>el.style.display='none');document.getElementById('adm-tab-'+t).style.display='block';['citas','fila','horarios','servicios','barberos','portfolio'].forEach(id=>{const b=document.getElementById('adm-nav-'+id);if(b)b.classList.toggle('active',id===t);});if(t==='portfolio')renderAdminPortfolio();if(t==='fila'){renderQueueAdminDisplay();renderQueuePreview();}if(t==='horarios'){renderScheduleEditor();renderBlockedSlots();}if(t==='servicios')renderServicesList();}
 function exitAdmin(){document.getElementById('tab-admin').style.display='none';document.getElementById('tab-booking').style.display='block';document.getElementById('pub-nav-booking').classList.add('active');document.getElementById('pub-nav-portfolio').classList.remove('active');}
 function resetBooking(){document.getElementById('appointment-form').reset();document.getElementById('appointment-form').style.display='block';document.getElementById('payment-details').style.display='none';updateDepositPreview();}
 
