@@ -411,9 +411,20 @@ let appointments=[],portfolioPhotos=[],uploadQueue=[],activeFilter='all';
 
 // INIT
 window.onload=async()=>{
-    if(SUPABASE_URL&&SUPABASE_KEY){_supabase=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);await refreshData();await loadPortfolio();}
+    if(SUPABASE_URL&&SUPABASE_KEY){
+        _supabase=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+        await refreshData();
+        await loadPortfolio();
+        // Real-time subscription: any change in settings table re-syncs all clients
+        _supabase.channel('settings-changes')
+            .on('postgres_changes',{event:'*',schema:'public',table:'settings'},async()=>{
+                await loadRemoteConfig();
+                renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();
+                renderServiceOptions();renderServicesList();renderSchedule();renderTimeSlots();
+            }).subscribe();
+    }
     else showToast("Configura Supabase",false);
-    loadLocalConfig();
+    await loadRemoteConfig();
     renderAll();
     setupQueueBroadcast();
     setInterval(updateRealTimeStatuses,1000);
@@ -426,16 +437,34 @@ function renderAll(){
 }
 
 // LOCAL STORAGE
-function loadLocalConfig(){
-    try{const s=localStorage.getItem('amezquita_v2');if(s){const p=JSON.parse(s);if(p.schedule)config.schedule=p.schedule;if(p.blockedSlots)config.blockedSlots=p.blockedSlots;if(typeof p.queueCount==='number')config.queueCount=p.queueCount;if(p.services&&p.services.length)config.services=p.services;}}catch(e){}
+// ── Supabase settings persistence ──
+async function loadRemoteConfig(){
+    if(!_supabase)return;
+    try{
+        const{data}=await _supabase.from('settings').select('*');
+        if(!data)return;
+        data.forEach(row=>{
+            if(row.key==='queue_count'){config.queueCount=parseInt(row.value)||0;}
+            if(row.key==='services'){try{const sv=JSON.parse(row.value);if(sv&&sv.length)config.services=sv;}catch(e){}}
+            if(row.key==='schedule'){try{const sc=JSON.parse(row.value);if(sc&&sc.length)config.schedule=sc;}catch(e){}}
+            if(row.key==='blocked_slots'){try{const bl=JSON.parse(row.value);if(bl)config.blockedSlots=bl;}catch(e){}}
+        });
+    }catch(e){console.warn('loadRemoteConfig:',e);}
 }
-function saveLocalConfig(){try{localStorage.setItem('amezquita_v2',JSON.stringify({schedule:config.schedule,blockedSlots:config.blockedSlots,queueCount:config.queueCount,services:config.services}));}catch(e){}}
+async function saveRemoteSetting(key,value){
+    if(!_supabase)return;
+    try{await _supabase.from('settings').upsert({key,value:JSON.stringify(value)},{onConflict:'key'});}
+    catch(e){console.warn('saveRemoteSetting:',e);}
+}
+function saveLocalConfig(){
+    // kept as no-op fallback — real save goes to Supabase via saveRemoteSetting
+}
 
 // BROADCAST for same-device multi-tab queue sync
 function setupQueueBroadcast(){
     try{const bc=new BroadcastChannel('amezquita_q');bc.onmessage=e=>{if(e.data&&typeof e.data.q==='number'){config.queueCount=e.data.q;renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();}};window._qbc=bc;}catch(e){}
 }
-function broadcastQ(){try{if(window._qbc)window._qbc.postMessage({q:config.queueCount});}catch(e){}}
+
 
 async function refreshData(){
     if(!_supabase)return;
@@ -443,8 +472,8 @@ async function refreshData(){
 }
 
 // ==================== QUEUE ====================
-function adjustQueue(delta){config.queueCount=Math.max(0,config.queueCount+delta);saveLocalConfig();broadcastQ();renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();}
-function setQueue(n){config.queueCount=Math.max(0,n);saveLocalConfig();broadcastQ();renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();showToast("Fila actualizada");}
+async function adjustQueue(delta){config.queueCount=Math.max(0,config.queueCount+delta);await saveRemoteSetting('queue_count',config.queueCount);renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();}
+async function setQueue(n){config.queueCount=Math.max(0,n);await saveRemoteSetting('queue_count',config.queueCount);renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();showToast('Fila actualizada');}
 function confirmManualQueue(){const v=parseInt(document.getElementById('queue-manual-input').value);if(!isNaN(v)&&v>=0){setQueue(v);document.getElementById('queue-manual-input').value='';}}
 
 function renderQueueAdminDisplay(){
@@ -486,14 +515,14 @@ function renderScheduleEditor(){
         </div>`).join('');
 }
 
-function toggleDay(i){config.schedule[i].open=document.getElementById('dtog-'+i).checked;renderScheduleEditor();renderSchedule();renderTimeSlots();}
+async function toggleDay(i){config.schedule[i].open=document.getElementById('dtog-'+i).checked;renderScheduleEditor();renderSchedule();renderTimeSlots();}
 
-function saveSchedule(){
+async function saveSchedule(){
     config.schedule.forEach((d,i)=>{
         const tog=document.getElementById('dtog-'+i);const s=document.getElementById('dstart-'+i);const e=document.getElementById('dend-'+i);
         if(tog)d.open=tog.checked;if(s)d.start=s.value;if(e)d.end=e.value;
     });
-    saveLocalConfig();renderSchedule();renderTimeSlots();showToast("Horarios guardados");
+    await saveRemoteSetting('schedule',config.schedule);renderSchedule();renderTimeSlots();showToast('Horarios guardados');
 }
 
 function renderBlockTimeSelects(){
@@ -501,14 +530,14 @@ function renderBlockTimeSelects(){
     const o=ALL_TIMES.map(t=>`<option value="${t}">${t}</option>`).join('');bs.innerHTML=o;be.innerHTML=o;be.selectedIndex=1;
 }
 
-function addBlockedSlot(){
+async function addBlockedSlot(){
     const s=document.getElementById('block-start').value,e=document.getElementById('block-end').value;
     if(s>=e)return showToast("La hora inicio debe ser menor al fin",false);
     if(config.blockedSlots.find(b=>b.start===s&&b.end===e))return showToast("Bloque ya existe",false);
-    config.blockedSlots.push({start:s,end:e});saveLocalConfig();renderBlockedSlots();renderTimeSlots();showToast(`Bloqueado ${s} - ${e}`);
+    config.blockedSlots.push({start:s,end:e});await saveRemoteSetting('blocked_slots',config.blockedSlots);renderBlockedSlots();renderTimeSlots();showToast(`Bloqueado ${s} - ${e}`);
 }
 
-function removeBlockedSlot(i){config.blockedSlots.splice(i,1);saveLocalConfig();renderBlockedSlots();renderTimeSlots();showToast("Bloque eliminado");}
+async function removeBlockedSlot(i){config.blockedSlots.splice(i,1);await saveRemoteSetting('blocked_slots',config.blockedSlots);renderBlockedSlots();renderTimeSlots();showToast("Bloque eliminado");}
 
 function renderBlockedSlots(){
     const c=document.getElementById('blocked-slots-list');if(!c)return;
@@ -709,14 +738,14 @@ async function saveEditService(i){
     const price=parseFloat(document.getElementById('edit-price-'+i).value);
     if(!name||isNaN(price)||price<0)return showToast('Datos invalidos',false);
     config.services[i]={name,price};
-    saveLocalConfig();
+    await saveRemoteSetting('services',config.services);
     renderServicesList();renderServiceOptions();
     showToast('Servicio actualizado');
 }
 async function deleteService(i){
     if(!confirm('Eliminar este servicio?'))return;
     config.services.splice(i,1);
-    saveLocalConfig();
+    await saveRemoteSetting('services',config.services);
     renderServicesList();renderServiceOptions();
     showToast('Servicio eliminado');
 }
@@ -725,7 +754,7 @@ async function addService(){
     const price=parseFloat(document.getElementById('new-svc-price').value);
     if(!name||isNaN(price)||price<0)return showToast('Completa nombre y precio',false);
     config.services.push({name,price});
-    saveLocalConfig();
+    await saveRemoteSetting('services',config.services);
     document.getElementById('new-svc-name').value='';
     document.getElementById('new-svc-price').value='';
     renderServicesList();renderServiceOptions();
