@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amezquita Barbershop | Premium Experience</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Raleway:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--gold:#c9a84c;--gold-light:#e8cc80;--gold-dim:#8a6e2e;--ink:#080808;--ink-mid:#1c1c1c;--smoke:#2e2e2e;--ash:#888;--cream:#f0ead8;}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Raleway',sans-serif;background:var(--ink);color:var(--cream);min-height:100vh;overflow-x:hidden;}
+        body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");}
+        .serif{font-family:'Cormorant Garamond',serif;}
+        .gold-text{background:linear-gradient(135deg,var(--gold-dim),var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .card{background:rgba(20,19,17,.85);border:1px solid rgba(201,168,76,.12);backdrop-filter:blur(20px);position:relative;}
+        .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.4),transparent);}
+        .inp{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:14px 18px;font-size:13px;font-family:'Raleway',sans-serif;color:var(--cream);outline:none;transition:border-color .3s;-webkit-appearance:none;appearance:none;}
+        .inp:focus{border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.03);}
+        .inp::placeholder{color:#555;}
+        .inp option{background:#111;color:#e0d8c8;}
+        .lbl{font-size:9px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:8px;}
+        .btn-primary{background:linear-gradient(135deg,#8a6e2e 0%,#c9a84c 50%,#e8cc80 100%);background-size:200% 200%;background-position:100% 100%;color:#0a0800;font-family:'Raleway',sans-serif;font-size:10px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;border:none;padding:16px 40px;cursor:pointer;transition:background-position .4s,box-shadow .3s;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+        .btn-primary:hover{background-position:0% 0%;box-shadow:0 8px 30px rgba(201,168,76,.25);}
+        .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+        .btn-ghost{background:transparent;color:var(--ash);font-family:'Raleway',sans-serif;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;border:1px solid rgba(255,255,255,.1);padding:14px 28px;cursor:pointer;transition:all .3s;border-radius:3px;}
+        .btn-ghost:hover{border-color:rgba(201,168,76,.4);color:var(--gold-light);}
+        .btn-sm{padding:8px 16px!important;font-size:9px!important;}
+        .btn-icon{width:30px;height:30px;border-radius:4px;background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--ash);cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;}
+        .btn-icon.danger:hover{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#ef4444;}
+        .badge{font-size:8px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;padding:4px 12px;border-radius:2px;display:inline-block;}
+        .badge-pending{background:rgba(201,168,76,.08);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
+        .badge-accepted{background:rgba(16,185,129,.08);color:#10b981;border:1px solid rgba(16,185,129,.2);}
+        .badge-rejected{background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);}
+        .badge-inservice{background:rgba(99,102,241,.08);color:#818cf8;border:1px solid rgba(99,102,241,.2);}
+        ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--ink);}::-webkit-scrollbar-thumb{background:var(--gold-dim);}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulseGold{0%,100%{opacity:1}50%{opacity:.4}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes countUp{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+        .anim-up{animation:fadeUp .7s ease forwards;opacity:0;}
+        .d1{animation-delay:.1s}.d2{animation-delay:.25s}.d3{animation-delay:.4s}
+        .header-rule{width:40px;height:1px;background:linear-gradient(90deg,var(--gold),transparent);}
+        .crown-btn{width:42px;height:42px;border-radius:50%;background:transparent;border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;color:var(--gold-dim);}
+        .crown-btn:hover{border-color:var(--gold);color:var(--gold-light);background:rgba(201,168,76,.05);}
+        .nav-tab{font-size:9px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;padding:10px 16px;cursor:pointer;background:none;border:none;color:var(--ash);border-bottom:1px solid transparent;transition:all .3s;font-family:'Raleway',sans-serif;white-space:nowrap;}
+        .nav-tab:hover{color:var(--gold-light);}
+        .nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+        .timer-card{background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:6px;padding:16px 20px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+        .sched-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px;}
+        .sched-row:last-child{border-bottom:none;}
+        .deposit-footer{background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);border-radius:6px;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+        .info-row{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:4px;margin-bottom:8px;}
+        table{border-collapse:collapse;width:100%;}
+        thead{border-bottom:1px solid rgba(201,168,76,.15);}
+        th{font-size:8px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:var(--gold-dim);padding:14px 20px;text-align:left;}
+        td{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;}
+        tbody tr:hover{background:rgba(255,255,255,.02);}
+
+        /* QUEUE */
+        .queue-hero{text-align:center;padding:28px 20px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);border-radius:8px;margin-bottom:16px;}
+        .queue-number{font-family:'Cormorant Garamond',serif;font-size:80px;font-weight:600;line-height:1;color:var(--gold-light);}
+        .queue-animate{animation:countUp .35s ease;}
+        .queue-controls{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:20px;}
+        .queue-btn{width:48px;height:48px;border-radius:50%;border:1px solid rgba(201,168,76,.25);background:rgba(201,168,76,.05);color:var(--gold-light);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:monospace;line-height:1;}
+        .queue-btn:hover{background:rgba(201,168,76,.15);border-color:var(--gold);transform:scale(1.08);}
+        .queue-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:20px;padding:5px 14px;font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);}
+
+        /* SCHEDULE EDITOR */
+        .day-row{display:grid;align-items:center;gap:12px;padding:14px 16px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:6px;margin-bottom:8px;transition:all .2s;grid-template-columns:auto 1fr auto;}
+        .day-row.closed{opacity:.5;}
+        .toggle-wrap{display:flex;align-items:center;gap:10px;}
+        .toggle-day{position:relative;width:36px;height:20px;flex-shrink:0;display:inline-block;}
+        .toggle-day input{opacity:0;width:0;height:0;position:absolute;}
+        .toggle-track{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:20px;cursor:pointer;transition:background .3s;}
+        .toggle-track::after{content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#666;transition:transform .3s,background .3s;}
+        .toggle-day input:checked + .toggle-track{background:rgba(201,168,76,.3);}
+        .toggle-day input:checked + .toggle-track::after{transform:translateX(16px);background:var(--gold);}
+        .time-range{display:flex;align-items:center;gap:8px;justify-content:flex-end;}
+        .time-inp{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:7px 10px;font-size:11px;font-family:'Raleway',sans-serif;color:var(--cream);outline:none;transition:border-color .3s;width:76px;text-align:center;-webkit-appearance:none;appearance:none;}
+        .time-inp:focus{border-color:rgba(201,168,76,.5);}
+        .time-inp:disabled{opacity:.25;cursor:not-allowed;}
+        .time-inp option{background:#111;color:#e0d8c8;}
+        .time-sep{font-size:11px;color:var(--ash);}
+        .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),transparent);margin:24px 0;}
+
+        /* PORTFOLIO */
+        .portfolio-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+        .portfolio-item{position:relative;border-radius:6px;overflow:hidden;aspect-ratio:4/5;border:1px solid rgba(201,168,76,.1);cursor:pointer;}
+        .portfolio-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s;}
+        .portfolio-item:hover img{transform:scale(1.06);}
+        .p-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,transparent 60%);opacity:0;transition:opacity .3s;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;}
+        .portfolio-item:hover .p-overlay{opacity:1;}
+        .p-delete{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.7);border:1px solid rgba(239,68,68,.4);color:#ef4444;cursor:pointer;font-size:11px;display:none;align-items:center;justify-content:center;}
+        .portfolio-item:hover .p-delete{display:flex;}
+        .p-delete:hover{background:rgba(239,68,68,.2);}
+        .drop-zone{border:2px dashed rgba(201,168,76,.2);border-radius:8px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;background:rgba(201,168,76,.02);}
+        .drop-zone:hover,.drop-zone.dragover{border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.05);}
+        .barber-filter-btn{padding:8px 20px;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;border-radius:50px;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--ash);cursor:pointer;transition:all .3s;font-family:'Raleway',sans-serif;white-space:nowrap;}
+        .barber-filter-btn.active{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.4);color:var(--gold-light);}
+
+        /* LIGHTBOX */
+        .lightbox{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(12px);}
+        .lightbox img{max-width:90vw;max-height:85vh;object-fit:contain;border-radius:4px;border:1px solid rgba(201,168,76,.2);}
+        .lb-close{position:absolute;top:20px;right:20px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--cream);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+        .lb-close:hover{background:rgba(255,255,255,.1);}
+
+        /* MODAL */
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;backdrop-filter:blur(8px);}
+        .modal-box{background:var(--ink-mid);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:40px;width:100%;max-width:380px;position:relative;}
+        .modal-box::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+
+        #toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(15,14,12,.95);border:1px solid rgba(201,168,76,.25);padding:14px 32px;border-radius:4px;z-index:200;transition:all .4s cubic-bezier(.16,1,.3,1);opacity:0;pointer-events:none;white-space:nowrap;}
+        #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+        .back-link{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);cursor:pointer;display:flex;align-items:center;gap:8px;background:none;border:none;transition:opacity .2s;}
+        .back-link:hover{opacity:.7;}
+        .layout{max-width:1200px;margin:0 auto;padding:40px 24px;position:relative;z-index:1;}
+        .upload-progress-bar{height:2px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin-top:8px;}
+        .upload-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold-light));border-radius:2px;transition:width .3s;width:0%;}
+        .spinner{animation:spin .8s linear infinite;display:inline-block;}
+        @media(min-width:768px){
+            #main-grid{grid-template-columns:260px 1fr!important;}
+            #form-grid{grid-template-columns:1fr 1fr!important;}
+            #date-time-grid{grid-template-columns:1fr 1fr!important;grid-column:span 2;}
+            #adm-barbers-cols{grid-template-columns:1fr 1fr!important;}
+            .day-row{grid-template-columns:160px 1fr auto!important;}
+        }
+        @media(min-width:1024px){
+            #adm-portfolio-grid{grid-template-columns:320px 1fr!important;}
+            #fila-grid{grid-template-columns:1fr 1fr!important;}
+            #horarios-grid{grid-template-columns:1fr 1fr!important;}
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+
+    <!-- HEADER -->
+    <header class="anim-up" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+            <h1 class="serif gold-text" style="font-size:clamp(36px,5vw,54px);font-style:italic;font-weight:600;letter-spacing:-.02em;line-height:1;">Amezquita</h1>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><div class="header-rule"></div><span style="font-size:9px;font-weight:700;letter-spacing:.4em;text-transform:uppercase;color:var(--ash);">Barbershop</span></div>
+        </div>
+        <button class="crown-btn" onclick="checkAdminAccess()"><i class="fas fa-crown" style="font-size:13px;"></i></button>
+    </header>
+
+    <!-- PUBLIC NAV -->
+    <div class="anim-up d1" style="display:flex;gap:4px;margin-bottom:40px;border-bottom:1px solid rgba(255,255,255,.06);">
+        <button class="nav-tab active" id="pub-nav-booking" onclick="switchPublicTab('booking')">Reservar</button>
+        <button class="nav-tab" id="pub-nav-portfolio" onclick="switchPublicTab('portfolio')">Portafolio</button>
+    </div>
+
+    <!-- TAB BOOKING -->
+    <div id="tab-booking" class="tab-content">
+        <div id="main-grid" style="display:grid;gap:32px;grid-template-columns:1fr;">
+            <div>
+                <div class="card anim-up d1" style="border-radius:8px;padding:28px;margin-bottom:24px;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                        <span style="width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulseGold 2s infinite;display:block;"></span>
+                        <span style="font-size:9px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);">Estado en Vivo</span>
+                    </div>
+                    <div id="queue-public-display" style="margin-bottom:16px;"></div>
+                    <div id="real-time-status"></div>
+                </div>
+                <div class="card anim-up d2" style="border-radius:8px;padding:28px;">
+                    <p class="lbl" style="margin-bottom:16px;">Horario de Atención</p>
+                    <div id="schedule-display"></div>
+                </div>
+            </div>
+            <div class="anim-up d3">
+                <div class="card" style="border-radius:8px;padding:clamp(24px,5vw,48px);">
+                    <div id="appointment-form-container">
+                        <form id="appointment-form">
+                            <div style="margin-bottom:32px;">
+                                <h2 class="serif gold-text" style="font-size:clamp(28px,4vw,42px);font-style:italic;font-weight:600;">Reservar Experiencia</h2>
+                                <p style="font-size:11px;color:var(--ash);margin-top:8px;">Confirma tu cita y asegura tu lugar.</p>
+                            </div>
+                            <div id="form-grid" style="display:grid;gap:20px;">
+                                <div><label class="lbl">Nombre del Cliente</label><input type="text" id="cust-name" required placeholder="Ej. Juan Pérez" class="inp"></div>
+                                <div><label class="lbl">Barbero</label><select id="barber-select" class="inp"></select></div>
+                                <div><label class="lbl">Servicio</label><select id="service-select" onchange="updateDepositPreview()" class="inp"></select></div>
+                                <div id="date-time-grid" style="display:grid;gap:20px;grid-template-columns:1fr 1fr;">
+                                    <div><label class="lbl">Fecha</label><input type="date" id="date" required onchange="validateDay(this)" class="inp"></div>
+                                    <div><label class="lbl">Hora</label><select id="time-select" class="inp"></select></div>
+                                </div>
+                            </div>
+                            <div class="deposit-footer" style="margin-top:32px;">
+                                <div>
+                                    <p style="font-size:9px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">Depósito Requerido (30%)</p>
+                                    <p id="deposit-amount" class="serif" style="font-size:36px;font-weight:600;color:white;line-height:1;">$0.00</p>
+                                </div>
+                                <button type="submit" class="btn-primary">Confirmar Reserva</button>
+                            </div>
+                        </form>
+                        <div id="payment-details" style="display:none;">
+                            <div style="text-align:center;margin-bottom:32px;">
+                                <div style="width:56px;height:56px;border-radius:50%;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"><i class="fas fa-check" style="color:var(--gold);font-size:18px;"></i></div>
+                                <h3 class="serif" style="font-size:28px;font-style:italic;font-weight:600;color:white;margin-bottom:8px;">Cita Confirmada</h3>
+                                <p style="font-size:11px;color:var(--ash);">Realiza tu depósito para asegurar tu lugar.</p>
+                            </div>
+                            <div id="bank-info-box" style="margin-bottom:24px;"></div>
+                            <button onclick="resetBooking()" class="btn-ghost" style="width:100%;">- Nueva Reserva</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB PORTFOLIO PUBLIC -->
+    <div id="tab-portfolio" class="tab-content" style="display:none;">
+        <div style="margin-bottom:32px;">
+            <h2 class="serif gold-text anim-up" style="font-size:clamp(28px,4vw,48px);font-style:italic;font-weight:600;">Nuestro Trabajo</h2>
+            <p style="font-size:11px;color:var(--ash);margin-top:8px;" class="anim-up d1">Cada corte, una obra de arte.</p>
+        </div>
+        <div id="portfolio-filters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px;overflow-x:auto;padding-bottom:4px;"></div>
+        <div id="portfolio-gallery" class="portfolio-grid">
+            <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--ash);"><i class="fas fa-images" style="font-size:32px;margin-bottom:16px;display:block;opacity:.3;"></i><p style="font-size:12px;">Cargando portafolio...</p></div>
+        </div>
+    </div>
+
+    <!-- TAB ADMIN -->
+    <div id="tab-admin" class="tab-content" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;">
+            <div>
+                <h2 class="serif gold-text" style="font-size:clamp(28px,4vw,42px);font-style:italic;font-weight:600;">Panel Admin</h2>
+                <p style="font-size:10px;color:var(--ash);letter-spacing:.2em;text-transform:uppercase;margin-top:4px;">Gestion interna</p>
+            </div>
+            <button onclick="exitAdmin()" class="back-link"><i class="fas fa-arrow-left"></i> Salir</button>
+        </div>
+        <div style="display:flex;gap:0;margin-bottom:32px;border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto;">
+            <button class="nav-tab active" id="adm-nav-citas"     onclick="switchAdminTab('citas')">Citas</button>
+            <button class="nav-tab"        id="adm-nav-fila"      onclick="switchAdminTab('fila')">Fila de Espera</button>
+            <button class="nav-tab"        id="adm-nav-horarios"  onclick="switchAdminTab('horarios')">Horarios</button>
+            <button class="nav-tab"        id="adm-nav-barberos"  onclick="switchAdminTab('barberos')">Barberos</button>
+            <button class="nav-tab"        id="adm-nav-portfolio" onclick="switchAdminTab('portfolio')">Portafolio</button>
+        </div>
+
+        <!-- CITAS -->
+        <div id="adm-tab-citas" class="adm-tab">
+            <div class="card" style="border-radius:8px;overflow:hidden;">
+                <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.05);"><p style="font-size:9px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:var(--ash);">Lista de Citas</p></div>
+                <div style="overflow-x:auto;"><table><thead><tr><th>Cliente</th><th>Deposito</th><th>Horario</th><th>Estado</th><th style="text-align:right;">Acciones</th></tr></thead><tbody id="appointments-list"></tbody></table></div>
+            </div>
+        </div>
+
+        <!-- FILA DE ESPERA -->
+        <div id="adm-tab-fila" class="adm-tab" style="display:none;">
+            <div id="fila-grid" style="display:grid;gap:24px;grid-template-columns:1fr;">
+                <div class="card" style="border-radius:8px;padding:32px;">
+                    <p class="lbl" style="margin-bottom:20px;text-align:center;">Personas en Fila Ahora</p>
+                    <div class="queue-hero">
+                        <div class="queue-number" id="queue-count-display">0</div>
+                        <p style="font-size:10px;color:var(--ash);letter-spacing:.15em;text-transform:uppercase;margin-top:8px;" id="queue-label">personas esperando</p>
+                        <div class="queue-controls">
+                            <button class="queue-btn" onclick="adjustQueue(-1)" title="Quitar">-</button>
+                            <button class="queue-btn" onclick="adjustQueue(1)" title="Agregar">+</button>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
+                        <button onclick="setQueue(0)" class="btn-ghost btn-sm">Limpiar fila</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:16px;">
+                        <input type="number" id="queue-manual-input" min="0" max="99" placeholder="Numero exacto" class="inp" style="width:160px;text-align:center;padding:10px;">
+                        <button onclick="confirmManualQueue()" class="btn-primary btn-sm">Establecer</button>
+                    </div>
+                </div>
+                <div class="card" style="border-radius:8px;padding:28px;">
+                    <p class="lbl" style="margin-bottom:16px;">Vista previa (cliente)</p>
+                    <div id="queue-preview-box"></div>
+                    <div class="divider"></div>
+                    <p style="font-size:11px;color:var(--ash);line-height:1.7;">El numero de personas en fila se muestra en tiempo real en la pantalla de reservas. Verde = poca espera, dorado = espera moderada, rojo = mucha espera.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- HORARIOS -->
+        <div id="adm-tab-horarios" class="adm-tab" style="display:none;">
+            <div id="horarios-grid" style="display:grid;gap:24px;grid-template-columns:1fr;">
+                <div class="card" style="border-radius:8px;padding:28px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+                        <div>
+                            <p class="lbl" style="margin:0 0 4px;">Dias y Horarios</p>
+                            <p style="font-size:11px;color:var(--ash);">Activa dias y configura apertura/cierre en intervalos de 30 min.</p>
+                        </div>
+                        <button onclick="saveSchedule()" class="btn-primary btn-sm"><i class="fas fa-save"></i> Guardar</button>
+                    </div>
+                    <div id="schedule-editor"></div>
+                </div>
+                <div class="card" style="border-radius:8px;padding:28px;">
+                    <p class="lbl" style="margin-bottom:6px;">Horarios Bloqueados</p>
+                    <p style="font-size:11px;color:var(--ash);margin-bottom:20px;line-height:1.6;">Bloquea rangos de tiempo que no estaran disponibles para reservas (descanso, mantenimiento, etc).</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:16px;">
+                        <div><label class="lbl">Desde</label><select id="block-start" class="inp"></select></div>
+                        <div><label class="lbl">Hasta</label><select id="block-end" class="inp"></select></div>
+                        <button onclick="addBlockedSlot()" class="btn-primary" style="padding:14px 18px;"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="blocked-slots-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARBEROS -->
+        <div id="adm-tab-barberos" class="adm-tab" style="display:none;">
+            <div id="adm-barbers-cols" style="display:grid;gap:24px;grid-template-columns:1fr;">
+                <div class="card" style="border-radius:8px;padding:28px;">
+                    <p class="lbl" style="margin-bottom:20px;">Gestionar Barberos</p>
+                    <div id="admin-barbers-list" style="margin-bottom:20px;"></div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <input type="text" id="new-barber-name" placeholder="Nombre del barbero" class="inp">
+                        <input type="text" id="new-barber-role" placeholder="Puesto (Ej: Senior)" class="inp">
+                        <button onclick="addNewBarber()" class="btn-primary" style="width:100%;">Anadir Barbero</button>
+                    </div>
+                </div>
+                <div id="admin-manual-barbers" class="card" style="border-radius:8px;padding:28px;"></div>
+            </div>
+        </div>
+
+        <!-- PORTFOLIO ADMIN -->
+        <div id="adm-tab-portfolio" class="adm-tab" style="display:none;">
+            <div id="adm-portfolio-grid" style="display:grid;gap:28px;grid-template-columns:1fr;">
+                <div class="card" style="border-radius:8px;padding:28px;">
+                    <p class="lbl" style="margin-bottom:20px;">Subir Nuevas Fotos</p>
+                    <div style="margin-bottom:16px;"><label class="lbl">Barbero</label><select id="portfolio-barber-select" class="inp" onchange="renderAdminPortfolio()"></select></div>
+                    <div style="margin-bottom:16px;"><label class="lbl">Descripcion (opcional)</label><input type="text" id="portfolio-desc" placeholder="Ej. Fade clasico con degradado" class="inp"></div>
+                    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('portfolio-file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <input type="file" id="portfolio-file-input" accept="image/*" multiple style="display:none;" onchange="handleFileSelect(event)">
+                        <i class="fas fa-cloud-upload-alt" style="font-size:28px;color:var(--gold-dim);margin-bottom:12px;display:block;"></i>
+                        <p style="font-size:12px;color:var(--ash);margin-bottom:4px;">Arrastra tus fotos aqui</p>
+                        <p style="font-size:10px;color:var(--smoke);">o haz clic para seleccionar - JPG, PNG, WEBP</p>
+                    </div>
+                    <div id="upload-queue" style="margin-top:12px;"></div>
+                    <button id="upload-btn" onclick="uploadQueuedFiles()" class="btn-primary" style="width:100%;margin-top:16px;display:none;"><i class="fas fa-upload"></i> Subir Fotos</button>
+                </div>
+                <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;"><p class="lbl" style="margin:0;">Fotos Subidas</p><span id="adm-photo-count" style="font-size:10px;color:var(--ash);"></span></div>
+                    <div id="adm-portfolio-gallery" class="portfolio-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" class="lightbox" style="display:none;" onclick="closeLightbox(event)">
+    <button class="lb-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
+    <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- PASSWORD MODAL -->
+<div id="password-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <div style="text-align:center;margin-bottom:28px;"><i class="fas fa-crown" style="color:var(--gold);font-size:22px;margin-bottom:12px;display:block;"></i><p style="font-size:9px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:var(--ash);">Acceso Restringido</p></div>
+        <input type="password" id="admin-pass" onkeydown="if(event.key==='Enter')verifyPassword()" placeholder="Contrasena" class="inp" style="text-align:center;margin-bottom:16px;letter-spacing:.3em;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <button onclick="closeModal()" class="btn-ghost">Cancelar</button>
+            <button onclick="verifyPassword()" class="btn-primary">Entrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><p id="toast-msg" style="font-size:11px;font-weight:700;letter-spacing:.1em;"></p></div>
+
+<script>
+const SUPABASE_URL='https://sbkhgaqsyliignequsct.supabase.co';
+const SUPABASE_KEY='sb_publishable_6Jqj6qsQdpWptVoi3A-LUw_PzOY_Akj';
+const STORAGE_BUCKET='portfolio';
+const ADMIN_PASS='admin123';
+const dayNames=["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+let _supabase=null;
+
+let config={
+    barbers:[],
+    services:[{name:"Corte Signature",price:300},{name:"Corte + Barba Royal",price:450},{name:"Barba & Toalla Caliente",price:200}],
+    bankData:{bank:"Amezquita Bank",account:"0000 1111 2222",holder:"Amezquita Barbershop"},
+    schedule:[
+        {open:false,start:"09:00",end:"20:00"},
+        {open:true,start:"09:00",end:"20:00"},
+        {open:true,start:"09:00",end:"20:00"},
+        {open:true,start:"09:00",end:"20:00"},
+        {open:true,start:"09:00",end:"20:00"},
+        {open:true,start:"09:00",end:"20:00"},
+        {open:true,start:"09:00",end:"20:00"}
+    ],
+    blockedSlots:[],
+    queueCount:0
+};
+let appointments=[],portfolioPhotos=[],uploadQueue=[],activeFilter='all';
+
+// INIT
+window.onload=async()=>{
+    if(SUPABASE_URL&&SUPABASE_KEY){_supabase=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);await refreshData();await loadPortfolio();}
+    else showToast("Configura Supabase",false);
+    loadLocalConfig();
+    renderAll();
+    setupQueueBroadcast();
+    setInterval(updateRealTimeStatuses,1000);
+};
+
+function renderAll(){
+    renderSchedule();renderTimeSlots();renderScheduleEditor();renderBlockedSlots();renderBlockTimeSelects();
+    renderBarberOptions();renderServiceOptions();renderAdminBarbers();renderAdminAppointments();renderAdminManual();
+    renderPortfolioBarberSelect();renderPortfolioFilters();renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();
+}
+
+// LOCAL STORAGE
+function loadLocalConfig(){
+    try{const s=localStorage.getItem('amezquita_v2');if(s){const p=JSON.parse(s);if(p.schedule)config.schedule=p.schedule;if(p.blockedSlots)config.blockedSlots=p.blockedSlots;if(typeof p.queueCount==='number')config.queueCount=p.queueCount;}}catch(e){}
+}
+function saveLocalConfig(){try{localStorage.setItem('amezquita_v2',JSON.stringify({schedule:config.schedule,blockedSlots:config.blockedSlots,queueCount:config.queueCount}));}catch(e){}}
+
+// BROADCAST for same-device multi-tab queue sync
+function setupQueueBroadcast(){
+    try{const bc=new BroadcastChannel('amezquita_q');bc.onmessage=e=>{if(e.data&&typeof e.data.q==='number'){config.queueCount=e.data.q;renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();}};window._qbc=bc;}catch(e){}
+}
+function broadcastQ(){try{if(window._qbc)window._qbc.postMessage({q:config.queueCount});}catch(e){}}
+
+async function refreshData(){
+    if(!_supabase)return;
+    try{const{data:b}=await _supabase.from('barbers').select('*').order('id');if(b)config.barbers=b;const{data:a}=await _supabase.from('appointments').select('*').order('id',{ascending:false});if(a)appointments=a;renderBarberOptions();renderServiceOptions();renderAdminBarbers();renderAdminAppointments();renderAdminManual();renderPortfolioBarberSelect();}catch(e){console.error(e);}
+}
+
+// ==================== QUEUE ====================
+function adjustQueue(delta){config.queueCount=Math.max(0,config.queueCount+delta);saveLocalConfig();broadcastQ();renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();}
+function setQueue(n){config.queueCount=Math.max(0,n);saveLocalConfig();broadcastQ();renderQueuePublic();renderQueuePreview();renderQueueAdminDisplay();showToast("Fila actualizada");}
+function confirmManualQueue(){const v=parseInt(document.getElementById('queue-manual-input').value);if(!isNaN(v)&&v>=0){setQueue(v);document.getElementById('queue-manual-input').value='';}}
+
+function renderQueueAdminDisplay(){
+    const el=document.getElementById('queue-count-display'),lbl=document.getElementById('queue-label');if(!el)return;
+    el.textContent=config.queueCount;
+    el.classList.remove('queue-animate');void el.offsetWidth;el.classList.add('queue-animate');
+    if(lbl)lbl.textContent=config.queueCount===1?'persona esperando':'personas esperando';
+}
+
+function queueHTML(n){
+    if(n===0)return'<div class="queue-pill"><i class="fas fa-check" style="font-size:9px;"></i> Sin fila de espera</div>';
+    const[bg,bd,tc]=n<=3?['rgba(16,185,129,.1)','rgba(16,185,129,.3)','#10b981']:n<=6?['rgba(201,168,76,.08)','rgba(201,168,76,.25)','var(--gold-light)']:['rgba(239,68,68,.08)','rgba(239,68,68,.25)','#f87171'];
+    return`<div style="background:${bg};border:1px solid ${bd};border-radius:8px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <div><p style="font-size:9px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:${tc};margin-bottom:4px;">Fila de Espera</p><p style="font-size:11px;color:rgba(255,255,255,.55);">Aprox. ${n*25} min de espera</p></div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:${tc};line-height:1;">${n}</div>
+    </div>`;
+}
+function renderQueuePublic(){const el=document.getElementById('queue-public-display');if(el)el.innerHTML=queueHTML(config.queueCount);}
+function renderQueuePreview(){const el=document.getElementById('queue-preview-box');if(el)el.innerHTML=queueHTML(config.queueCount);}
+
+// ==================== SCHEDULE EDITOR ====================
+function genTimes(){const t=[];for(let h=0;h<24;h++)for(let m of[0,30])t.push(`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`);return t;}
+const ALL_TIMES=genTimes();
+
+function timeSelHTML(id,sel,dis=false){
+    return`<select id="${id}" class="time-inp"${dis?' disabled':''}>${ALL_TIMES.map(t=>`<option value="${t}"${t===sel?' selected':''}>${t}</option>`).join('')}</select>`;
+}
+
+function renderScheduleEditor(){
+    const c=document.getElementById('schedule-editor');if(!c)return;
+    c.innerHTML=config.schedule.map((d,i)=>`
+        <div class="day-row${d.open?'':' closed'}" id="drow-${i}">
+            <div class="toggle-wrap">
+                <label class="toggle-day"><input type="checkbox" id="dtog-${i}"${d.open?' checked':''} onchange="toggleDay(${i})"><span class="toggle-track"></span></label>
+                <span style="font-size:12px;font-weight:600;color:${d.open?'var(--cream)':'var(--smoke)'};">${dayNames[i]}</span>
+            </div>
+            <div class="time-range">${timeSelHTML('dstart-'+i,d.start,!d.open)}<span class="time-sep">-</span>${timeSelHTML('dend-'+i,d.end,!d.open)}</div>
+            <span style="font-size:9px;font-weight:700;letter-spacing:.15em;color:${d.open?'var(--gold)':'var(--smoke)'};text-transform:uppercase;">${d.open?'Abierto':'Cerrado'}</span>
+        </div>`).join('');
+}
+
+function toggleDay(i){config.schedule[i].open=document.getElementById('dtog-'+i).checked;renderScheduleEditor();renderSchedule();renderTimeSlots();}
+
+function saveSchedule(){
+    config.schedule.forEach((d,i)=>{
+        const tog=document.getElementById('dtog-'+i);const s=document.getElementById('dstart-'+i);const e=document.getElementById('dend-'+i);
+        if(tog)d.open=tog.checked;if(s)d.start=s.value;if(e)d.end=e.value;
+    });
+    saveLocalConfig();renderSchedule();renderTimeSlots();showToast("Horarios guardados");
+}
+
+function renderBlockTimeSelects(){
+    const bs=document.getElementById('block-start'),be=document.getElementById('block-end');if(!bs||!be)return;
+    const o=ALL_TIMES.map(t=>`<option value="${t}">${t}</option>`).join('');bs.innerHTML=o;be.innerHTML=o;be.selectedIndex=1;
+}
+
+function addBlockedSlot(){
+    const s=document.getElementById('block-start').value,e=document.getElementById('block-end').value;
+    if(s>=e)return showToast("La hora inicio debe ser menor al fin",false);
+    if(config.blockedSlots.find(b=>b.start===s&&b.end===e))return showToast("Bloque ya existe",false);
+    config.blockedSlots.push({start:s,end:e});saveLocalConfig();renderBlockedSlots();renderTimeSlots();showToast(`Bloqueado ${s} - ${e}`);
+}
+
+function removeBlockedSlot(i){config.blockedSlots.splice(i,1);saveLocalConfig();renderBlockedSlots();renderTimeSlots();showToast("Bloque eliminado");}
+
+function renderBlockedSlots(){
+    const c=document.getElementById('blocked-slots-list');if(!c)return;
+    if(!config.blockedSlots.length){c.innerHTML='<p style="font-size:11px;color:var(--ash);text-align:center;padding:20px 0;">Sin bloques de tiempo</p>';return;}
+    c.innerHTML=config.blockedSlots.map((b,i)=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.12);border-radius:4px;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;"><i class="fas fa-ban" style="color:#ef4444;font-size:11px;"></i><span style="font-size:12px;color:var(--cream);">${b.start} - ${b.end}</span></div>
+            <button onclick="removeBlockedSlot(${i})" class="btn-icon danger"><i class="fas fa-trash"></i></button>
+        </div>`).join('');
+}
+
+function renderSchedule(){
+    const d=document.getElementById('schedule-display');if(!d)return;
+    d.innerHTML=config.schedule.map((day,i)=>`
+        <div class="sched-row">
+            <span style="color:${day.open?'var(--cream)':'var(--smoke)'};">${dayNames[i]}</span>
+            <span style="font-size:11px;font-weight:${day.open?'600':'400'};color:${day.open?'var(--gold)':'var(--smoke)'};">${day.open?day.start+' - '+day.end:'Cerrado'}</span>
+        </div>`).join('');
+}
+
+function renderTimeSlots(){
+    const s=document.getElementById('time-select');if(!s)return;
+    const openDays=config.schedule.filter(d=>d.open);
+    let startH=9,endH=20;
+    if(openDays.length){startH=Math.min(...openDays.map(d=>parseInt(d.start)));endH=Math.max(...openDays.map(d=>parseInt(d.end)));}
+    const blocked=config.blockedSlots;
+    let o='';
+    for(let h=startH;h<endH;h++){
+        for(let m of[0,30]){
+            const hh=h.toString().padStart(2,'0'),mm=m.toString().padStart(2,'0'),t=`${hh}:${mm}`;
+            if(!blocked.some(b=>t>=b.start&&t<b.end))o+=`<option value="${t}">${t}</option>`;
+        }
+    }
+    s.innerHTML=o||'<option disabled>Sin horarios disponibles</option>';
+}
+
+function validateDay(inp){
+    const d=new Date(inp.value+'T00:00:00').getDay();
+    if(!config.schedule[d]?.open){showToast("La barberia esta cerrada ese dia",false);inp.value='';}
+}
+
+// ==================== PORTFOLIO ====================
+async function loadPortfolio(){
+    if(!_supabase)return;
+    try{const{data,error}=await _supabase.from('portfolio').select('*, barbers(name)').order('created_at',{ascending:false});if(error)throw error;
+    portfolioPhotos=(data||[]).map(p=>({...p,barber_name:p.barbers?.name||'Sin barbero'}));renderPublicPortfolio();renderAdminPortfolio();renderPortfolioFilters();}catch(e){console.error(e);}
+}
+function renderPortfolioFilters(){
+    const c=document.getElementById('portfolio-filters');if(!c)return;
+    c.innerHTML=`<button class="barber-filter-btn${activeFilter==='all'?' active':''}" onclick="filterPortfolio('all')">Todos</button>`+config.barbers.map(b=>`<button class="barber-filter-btn${activeFilter===b.id?' active':''}" onclick="filterPortfolio(${b.id})">${b.name}</button>`).join('');
+}
+function filterPortfolio(id){activeFilter=id;renderPortfolioFilters();renderPublicPortfolio();}
+function renderPublicPortfolio(){
+    const g=document.getElementById('portfolio-gallery');if(!g)return;
+    const ph=activeFilter==='all'?portfolioPhotos:portfolioPhotos.filter(p=>p.barber_id===activeFilter);
+    if(!ph.length){g.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--ash);"><i class="fas fa-images" style="font-size:32px;margin-bottom:16px;display:block;opacity:.3;"></i><p style="font-size:12px;">Aun no hay fotos.</p></div>`;return;}
+    g.innerHTML=ph.map(p=>`<div class="portfolio-item" onclick="openLightbox('${p.image_url}')"><img src="${p.image_url}" alt="${p.description||'Corte'}" loading="lazy"><div class="p-overlay"><p style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;">${p.barber_name}</p>${p.description?`<p style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;">${p.description}</p>`:''}</div></div>`).join('');
+}
+function renderPortfolioBarberSelect(){const s=document.getElementById('portfolio-barber-select');if(!s)return;s.innerHTML=config.barbers.map(b=>`<option value="${b.id}">${b.name} - ${b.role}</option>`).join('')||'<option disabled>Sin barberos</option>';}
+function renderAdminPortfolio(){
+    const g=document.getElementById('adm-portfolio-gallery'),ct=document.getElementById('adm-photo-count');if(!g)return;
+    const sid=parseInt(document.getElementById('portfolio-barber-select')?.value);
+    const ph=sid?portfolioPhotos.filter(p=>p.barber_id===sid):portfolioPhotos;
+    if(ct)ct.textContent=`${ph.length} foto${ph.length!==1?'s':''}`;
+    if(!ph.length){g.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--ash);"><i class="fas fa-camera" style="font-size:24px;margin-bottom:12px;display:block;opacity:.3;"></i><p style="font-size:12px;">Sin fotos para este barbero.</p></div>`;return;}
+    g.innerHTML=ph.map(p=>`<div class="portfolio-item"><img src="${p.image_url}" alt="${p.description||''}" loading="lazy"><div class="p-overlay"><p style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;">${p.barber_name}</p>${p.description?`<p style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;">${p.description}</p>`:''}</div><button class="p-delete" onclick="deletePhoto(event,'${p.id}','${p.storage_path}')"><i class="fas fa-trash"></i></button></div>`).join('');
+}
+function handleDragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('dragover');}
+function handleDragLeave(){document.getElementById('drop-zone').classList.remove('dragover');}
+function handleDrop(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('dragover');addToQueue(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));}
+function handleFileSelect(e){addToQueue(Array.from(e.target.files));e.target.value='';}
+function addToQueue(files){files.forEach(f=>{uploadQueue.push({id:Date.now()+Math.random(),file:f,preview:URL.createObjectURL(f)});});renderUploadQueue();}
+function removeFromQueue(id){uploadQueue=uploadQueue.filter(f=>f.id!==id);renderUploadQueue();}
+function renderUploadQueue(){
+    const c=document.getElementById('upload-queue'),btn=document.getElementById('upload-btn');
+    if(!uploadQueue.length){c.innerHTML='';btn.style.display='none';return;}
+    btn.style.display='flex';
+    c.innerHTML=uploadQueue.map(item=>{const sid=item.id.toString().replace('.','');
+    return`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+        <img src="${item.preview}" style="width:44px;height:44px;object-fit:cover;border-radius:4px;border:1px solid rgba(255,255,255,.1);">
+        <div style="flex:1;min-width:0;"><p style="font-size:11px;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.file.name}</p><p style="font-size:10px;color:var(--ash);margin-top:2px;">${(item.file.size/1024).toFixed(0)} KB</p><div class="upload-progress-bar" id="prog-${sid}" style="display:none;"><div class="upload-progress-fill" id="fill-${sid}"></div></div></div>
+        <button onclick="removeFromQueue(${item.id})" style="background:none;border:none;cursor:pointer;color:var(--ash);font-size:13px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--ash)'"><i class="fas fa-times"></i></button>
+    </div>`;}).join('');
+}
+async function uploadQueuedFiles(){
+    if(!_supabase)return showToast("Supabase no configurado",false);if(!uploadQueue.length)return;
+    const bId=parseInt(document.getElementById('portfolio-barber-select').value),desc=document.getElementById('portfolio-desc').value.trim();
+    if(!bId)return showToast("Selecciona un barbero",false);
+    const btn=document.getElementById('upload-btn');btn.disabled=true;btn.innerHTML='<i class="fas fa-circle-notch spinner"></i> Subiendo...';
+    let ok=0;
+    for(const item of[...uploadQueue]){
+        const sid=item.id.toString().replace('.',''),pb=document.getElementById('prog-'+sid),pf=document.getElementById('fill-'+sid);
+        if(pb)pb.style.display='block';
+        try{
+            const ext=item.file.name.split('.').pop().toLowerCase(),path=`${bId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+            if(pf)pf.style.width='35%';
+            const{error:se}=await _supabase.storage.from(STORAGE_BUCKET).upload(path,item.file,{cacheControl:'3600',upsert:false});if(se)throw se;
+            if(pf)pf.style.width='70%';
+            const{data:ud}=_supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+            const{error:de}=await _supabase.from('portfolio').insert([{barber_id:bId,image_url:ud.publicUrl,storage_path:path,description:desc||null}]);if(de)throw de;
+            if(pf)pf.style.width='100%';ok++;uploadQueue=uploadQueue.filter(f=>f.id!==item.id);
+        }catch(e){console.error(e);showToast('Error subiendo '+item.file.name,false);if(pf){pf.style.width='100%';pf.style.background='#ef4444';}}
+    }
+    btn.disabled=false;btn.innerHTML='<i class="fas fa-upload"></i> Subir Fotos';
+    if(ok>0){showToast(ok+' foto'+( ok>1?'s':'')+' subida'+(ok>1?'s':'')+' OK');document.getElementById('portfolio-desc').value='';renderUploadQueue();await loadPortfolio();}
+}
+async function deletePhoto(e,pid,sp){e.stopPropagation();if(!_supabase||!confirm('Eliminar esta foto?'))return;try{await _supabase.storage.from(STORAGE_BUCKET).remove([sp]);await _supabase.from('portfolio').delete().eq('id',pid);showToast("Foto eliminada");await loadPortfolio();}catch(e){showToast("Error al eliminar",false);}}
+
+// LIGHTBOX
+function openLightbox(url){document.getElementById('lightbox-img').src=url;document.getElementById('lightbox').style.display='flex';document.body.style.overflow='hidden';}
+function closeLightbox(e){if(e&&!e.target.closest('.lb-close')&&e.target!==document.getElementById('lightbox'))return;document.getElementById('lightbox').style.display='none';document.body.style.overflow='';}
+
+// BARBERS
+async function addNewBarber(){if(!_supabase)return showToast("Supabase no configurado",false);const name=document.getElementById('new-barber-name').value.trim(),role=document.getElementById('new-barber-role').value.trim();if(!name||!role)return showToast("Faltan datos",false);const{error}=await _supabase.from('barbers').insert([{name,role,busy_until:0}]);if(error)showToast("Error",false);else{showToast("Barbero anadido");document.getElementById('new-barber-name').value='';document.getElementById('new-barber-role').value='';await refreshData();}}
+async function removeBarber(id){if(!_supabase)return;await _supabase.from('barbers').delete().eq('id',id);showToast("Barbero eliminado");await refreshData();}
+function renderAdminBarbers(){const l=document.getElementById('admin-barbers-list');if(!l)return;l.innerHTML=config.barbers.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:4px;margin-bottom:8px;"><div><p style="font-size:12px;font-weight:600;color:var(--cream);">${b.name}</p><p style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);margin-top:2px;">${b.role}</p></div><button onclick="removeBarber(${b.id})" style="background:none;border:none;cursor:pointer;color:#ef4444;opacity:.5;transition:opacity .2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5"><i class="fas fa-trash-alt" style="font-size:11px;"></i></button></div>`).join('')||'<p style="font-size:11px;color:var(--ash);text-align:center;padding:20px 0;">Sin barberos registrados</p>';}
+function renderBarberOptions(){const s=document.getElementById('barber-select');if(!s)return;s.innerHTML=config.barbers.map(b=>`<option value="${b.id}">${b.name} - ${b.role}</option>`).join('')||'<option disabled>Sin barberos</option>';}
+
+// SERVICES
+function renderServiceOptions(){const s=document.getElementById('service-select');if(!s)return;s.innerHTML=config.services.map(sv=>`<option value="${sv.name}" data-price="${sv.price}">${sv.name}  -  $${sv.price}</option>`).join('');updateDepositPreview();}
+function updateDepositPreview(){const s=document.getElementById('service-select');if(!s||!s.selectedOptions[0])return;document.getElementById('deposit-amount').innerText='$'+(parseFloat(s.selectedOptions[0].dataset.price)*.3).toFixed(2);}
+
+// FORM SUBMIT
+document.getElementById('appointment-form').onsubmit=async(e)=>{
+    e.preventDefault();if(!_supabase)return showToast("Error de conexion",false);
+    const bId=document.getElementById('barber-select').value,ss=document.getElementById('service-select');if(!bId)return showToast("Selecciona un barbero",false);
+    const price=parseFloat(ss.selectedOptions[0].dataset.price);
+    const{error}=await _supabase.from('appointments').insert([{customer_name:document.getElementById('cust-name').value,barber_id:parseInt(bId),appointment_date:document.getElementById('date').value,appointment_time:document.getElementById('time-select').value,deposit_amount:price*.3,status:'pending'}]);
+    if(!error){showToast("Cita registrada!");showPaymentDetails(price*.3);await refreshData();}else showToast("Error al procesar",false);
+};
+function showPaymentDetails(dep){
+    document.getElementById('appointment-form').style.display='none';document.getElementById('payment-details').style.display='block';
+    document.getElementById('bank-info-box').innerHTML=`<div class="info-row"><span class="lbl" style="margin:0;">Banco</span><span style="font-size:13px;color:var(--cream);">${config.bankData.bank}</span></div><div class="info-row"><span class="lbl" style="margin:0;">Cuenta</span><span style="font-size:13px;color:var(--gold);font-weight:700;">${config.bankData.account}</span></div><div class="info-row" style="background:rgba(201,168,76,.05);border-color:rgba(201,168,76,.2);"><span style="font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);">Total a Depositar</span><span class="serif" style="font-size:20px;font-weight:600;color:white;">$${dep.toFixed(2)}</span></div>`;
+}
+
+// APPOINTMENTS
+async function updateStatus(id,s){if(!_supabase)return;await _supabase.from('appointments').update({status:s}).eq('id',id);await refreshData();}
+async function startService(bId,aId){if(!_supabase)return;const u=Math.floor(Date.now()/1000)+1800;await _supabase.from('barbers').update({busy_until:u}).eq('id',bId);await _supabase.from('appointments').update({status:'inservice'}).eq('id',aId);await refreshData();}
+function renderAdminAppointments(){
+    const l=document.getElementById('appointments-list');if(!l)return;
+    l.innerHTML=appointments.map(a=>{const b=config.barbers.find(x=>x.id===a.barber_id);return`<tr><td><p style="font-weight:700;color:var(--cream);font-size:13px;">${a.customer_name}</p><p style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ash);margin-top:3px;">${b?b.name:'Sin asignar'}</p></td><td class="gold-text" style="font-weight:700;font-size:14px;">$${a.deposit_amount.toFixed(2)}</td><td><p style="color:var(--cream);font-size:12px;">${a.appointment_date}</p><p style="color:var(--gold);font-weight:700;font-size:12px;margin-top:2px;">${a.appointment_time}</p></td><td><span class="badge badge-${a.status}">${a.status}</span></td><td style="text-align:right;"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">${a.status==='accepted'?`<button onclick="startService(${a.barber_id},${a.id})" class="btn-primary btn-sm">Iniciar</button>`:''}<button onclick="updateStatus(${a.id},'accepted')" style="background:none;border:none;cursor:pointer;color:#10b981;font-size:15px;" onmouseover="this.style.opacity=.7" onmouseout="this.style.opacity=1"><i class="fas fa-check"></i></button><button onclick="updateStatus(${a.id},'rejected')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:15px;" onmouseover="this.style.opacity=.7" onmouseout="this.style.opacity=1"><i class="fas fa-times"></i></button></div></td></tr>`;}).join('')||`<tr><td colspan="5" style="text-align:center;padding:48px;color:var(--ash);font-size:12px;">Sin citas registradas</td></tr>`;
+}
+
+// REAL-TIME TIMERS
+function updateRealTimeStatuses(){
+    const c=document.getElementById('real-time-status');if(!c)return;const now=Math.floor(Date.now()/1000);let html='';
+    config.barbers.forEach(b=>{const d=b.busy_until-now;if(d>0){const m=Math.floor(d/60),s=d%60;html+=`<div class="timer-card"><div><p style="font-size:9px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">En Servicio</p><p style="font-size:13px;font-weight:600;color:var(--cream);">${b.name}</p></div><div style="font-family:monospace;font-size:22px;font-weight:700;color:var(--gold-light);">${m}:${s<10?'0'+s:s}</div></div>`;}});
+    c.innerHTML=html||`<p style="font-size:11px;color:var(--ash);text-align:center;padding:16px 0;">Sin servicios activos</p>`;
+}
+function renderAdminManual(){
+    const c=document.getElementById('admin-manual-barbers');if(!c)return;
+    c.innerHTML=`<p class="lbl" style="margin-bottom:16px;">Cronometros Manuales</p>`+(config.barbers.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:4px;margin-bottom:8px;"><span style="font-size:12px;color:var(--cream);">${b.name}</span><button onclick="manualTimer(${b.id})" class="btn-primary btn-sm">Set 30m</button></div>`).join('')||`<p style="font-size:11px;color:var(--ash);text-align:center;padding:16px 0;">Sin barberos</p>`);
+}
+async function manualTimer(id){if(!_supabase)return;await _supabase.from('barbers').update({busy_until:Math.floor(Date.now()/1000)+1800}).eq('id',id);await refreshData();}
+
+// NAVIGATION
+function switchPublicTab(t){['booking','portfolio'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';const b=document.getElementById('pub-nav-'+id);if(b)b.classList.toggle('active',id===t);});if(t==='portfolio'){renderPortfolioFilters();renderPublicPortfolio();}}
+function switchAdminTab(t){document.querySelectorAll('.adm-tab').forEach(el=>el.style.display='none');document.getElementById('adm-tab-'+t).style.display='block';['citas','fila','horarios','barberos','portfolio'].forEach(id=>{const b=document.getElementById('adm-nav-'+id);if(b)b.classList.toggle('active',id===t);});if(t==='portfolio')renderAdminPortfolio();if(t==='fila'){renderQueueAdminDisplay();renderQueuePreview();}if(t==='horarios'){renderScheduleEditor();renderBlockedSlots();}}
+function exitAdmin(){document.getElementById('tab-admin').style.display='none';document.getElementById('tab-booking').style.display='block';document.getElementById('pub-nav-booking').classList.add('active');document.getElementById('pub-nav-portfolio').classList.remove('active');}
+function resetBooking(){document.getElementById('appointment-form').reset();document.getElementById('appointment-form').style.display='block';document.getElementById('payment-details').style.display='none';updateDepositPreview();}
+
+// AUTH
+function checkAdminAccess(){document.getElementById('password-modal').style.display='flex';setTimeout(()=>document.getElementById('admin-pass').focus(),100);}
+function closeModal(){document.getElementById('password-modal').style.display='none';}
+function verifyPassword(){if(document.getElementById('admin-pass').value===ADMIN_PASS){closeModal();['tab-booking','tab-portfolio'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('tab-admin').style.display='block';}else showToast("Contrasena incorrecta",false);document.getElementById('admin-pass').value='';}
+
+// TOAST
+function showToast(msg,ok=true){const t=document.getElementById('toast');document.getElementById('toast-msg').innerText=msg;document.getElementById('toast-msg').style.color=ok?'var(--gold-light)':'#ef4444';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+</script>
+</body>
+</html>
